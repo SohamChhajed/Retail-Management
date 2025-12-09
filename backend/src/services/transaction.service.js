@@ -1,5 +1,11 @@
 const { runSelectAll, runSelectOne } = require("../utils/db");
 const { toArray, normalize, toNumber } = require("../utils/queryHelpers");
+const SORT_COLUMNS = {
+  date: "date",
+  quantity: "quantity",
+  customerName: "customer_name",
+};
+
 async function fetchTransactions(rawQuery) {
   const pageSize = 10;
 
@@ -21,26 +27,32 @@ async function fetchTransactions(rawQuery) {
     paymentMethod,
     dateFrom,
     dateTo,
+    sortBy,
+    sortDir,
   } = rawQuery;
 
+  // ---- SEARCH ----
   if (q && q.trim() !== "") {
     const pattern = `%${normalize(q)}%`;
     conditions.push("(LOWER(customer_name) LIKE ? OR LOWER(phone_number) LIKE ?)");
     params.push(pattern, pattern);
   }
 
+  // ---- FILTERS ----
   const regions = toArray(region).map(normalize);
   if (regions.length > 0) {
     const placeholders = regions.map(() => "?").join(", ");
     conditions.push(`LOWER(customer_region) IN (${placeholders})`);
     params.push(...regions);
   }
+
   const genders = toArray(gender).map(normalize);
   if (genders.length > 0) {
     const placeholders = genders.map(() => "?").join(", ");
     conditions.push(`LOWER(gender) IN (${placeholders})`);
     params.push(...genders);
   }
+
   const minAge = toNumber(ageMin);
   const maxAge = toNumber(ageMax);
   if (minAge !== null) {
@@ -85,10 +97,26 @@ async function fetchTransactions(rawQuery) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  const dataSql = `SELECT * FROM transactions ${whereClause} ORDER BY date DESC LIMIT ? OFFSET ?;`;
+  // ---- SORTING ----
+  const sortColumn = SORT_COLUMNS[sortBy] || "date";
+  const direction = sortDir === "asc" ? "ASC" : "DESC";
+  const orderByClause = `ORDER BY ${sortColumn} ${direction}`;
+
+  // ---- DATA + COUNT QUERIES ----
+  const dataSql = `
+    SELECT *
+    FROM transactions
+    ${whereClause}
+    ${orderByClause}
+    LIMIT ? OFFSET ?;
+  `;
   const dataParams = [...params, pageSize, offset];
 
-  const countSql = `SELECT COUNT(*) AS total FROM transactions ${whereClause};`;
+  const countSql = `
+    SELECT COUNT(*) AS total
+    FROM transactions
+    ${whereClause};
+  `;
   const countParams = [...params];
 
   const [rows, countRow] = await Promise.all([
