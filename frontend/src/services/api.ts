@@ -1,6 +1,8 @@
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
-export type SortBy = "date" | "quantity" | "customerName";
+
+export type SortBy = "date" | "quantity" | "customer_name";
+
 export interface TransactionQuery {
   q?: string;
   region?: string[];
@@ -16,6 +18,7 @@ export interface TransactionQuery {
   sortDir?: "asc" | "desc";
   page?: number;
 }
+
 export interface Transaction {
   id: number;
   transaction_id: string;
@@ -45,6 +48,7 @@ export interface Transaction {
   salesperson_id: string;
   employee_name: string;
 }
+
 export interface TransactionsResponse {
   items: Transaction[];
   total: number;
@@ -52,6 +56,7 @@ export interface TransactionsResponse {
   pageSize: number;
   totalPages: number;
 }
+
 export async function fetchTransactions(
   query: TransactionQuery
 ): Promise<TransactionsResponse> {
@@ -71,5 +76,6 @@ export async function fetchTransactions(
   if (!res.ok) {
     throw new Error("ERROR");
   }
+
   return res.json();
 }
