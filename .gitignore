@@ -5,7 +5,7 @@ backend/truestate_assignment_dataset.csv
 node_modules/
 backend/node_modules/
 frontend/node_modules/
-
+!backend/retail_sales_small.db
 
 .next/
 dist/

@@ -31,14 +31,12 @@ async function fetchTransactions(rawQuery) {
     sortDir,
   } = rawQuery;
 
-  // ---- SEARCH ----
   if (q && q.trim() !== "") {
     const pattern = `%${normalize(q)}%`;
     conditions.push("(LOWER(customer_name) LIKE ? OR LOWER(phone_number) LIKE ?)");
     params.push(pattern, pattern);
   }
 
-  // ---- FILTERS ----
   const regions = toArray(region).map(normalize);
   if (regions.length > 0) {
     const placeholders = regions.map(() => "?").join(", ");
@@ -97,12 +95,10 @@ async function fetchTransactions(rawQuery) {
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-  // ---- SORTING ----
   const sortColumn = SORT_COLUMNS[sortBy] || "date";
   const direction = sortDir === "asc" ? "ASC" : "DESC";
   const orderByClause = `ORDER BY ${sortColumn} ${direction}`;
 
-  // ---- DATA + COUNT QUERIES ----
   const dataSql = `
     SELECT *
     FROM transactions
