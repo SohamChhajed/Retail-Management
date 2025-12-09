@@ -25,6 +25,7 @@ export default function DataTable({
   const rows = data.items;
   const totalPages = data.totalPages;
 
+  // Pagination logic
   const pages: number[] = [];
   if (totalPages > 0) {
     let start = Math.max(1, page - 2);
@@ -49,9 +50,13 @@ export default function DataTable({
             <th className="px-3 py-2 text-right">Final Amount</th>
           </tr>
         </thead>
+
         <tbody>
           {rows.map((row) => (
-            <tr key={row.id} className="border-t">
+            <tr
+              key={`${row.transaction_id}-${row.date}`}  
+              className="border-t"
+            >
               <td className="px-3 py-2">{row.date}</td>
               <td className="px-3 py-2">{row.customer_name}</td>
               <td className="px-3 py-2">{row.customer_region}</td>
