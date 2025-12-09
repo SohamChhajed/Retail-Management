@@ -1,17 +1,30 @@
 const { runSelectAll, runSelectOne } = require("../utils/db");
-const { toNumber } = require("../utils/queryHelpers");
+const { toArray, normalize, toNumber } = require("../utils/queryHelpers");
+
 async function fetchTransactions(rawQuery) {
-  const pageSize = 10; // fixed 
+  const pageSize = 10;
 
   const pageNum = toNumber(rawQuery.page) || 1;
   const safePage = pageNum < 1 ? 1 : pageNum;
   const offset = (safePage - 1) * pageSize;
 
-  const dataSql = "SELECT * FROM transactions ORDER BY date DESC LIMIT ? OFFSET ?;";
-  const dataParams = [pageSize, offset];
+  const conditions = [];
+  const params = [];
 
-  const countSql = "SELECT COUNT(*) AS total FROM transactions;";
-  const countParams = [];
+  const { q } = rawQuery;
+  if (q && q.trim() !== "") {
+    const pattern = `%${normalize(q)}%`;
+    conditions.push("(LOWER(customer_name) LIKE ? OR LOWER(phone_number) LIKE ?)");
+    params.push(pattern, pattern);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const dataSql = `SELECT * FROM transactions ${whereClause} ORDER BY date DESC LIMIT ? OFFSET ?;`;
+  const dataParams = [...params, pageSize, offset];
+
+  const countSql = `SELECT COUNT(*) AS total FROM transactions ${whereClause};`;
+  const countParams = [...params];
 
   const [rows, countRow] = await Promise.all([
     runSelectAll(dataSql, dataParams),
