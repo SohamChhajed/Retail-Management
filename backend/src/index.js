@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-const transactionRoutes = require("./routes/transactions.routes");
+const transactionRoutes = require("./routes/transaction.routes");
 
 const app = express();
 const PORT = 5000;

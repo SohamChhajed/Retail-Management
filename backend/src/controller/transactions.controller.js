@@ -1,4 +1,4 @@
-const { fetchTransactions } = require("../services/transactions.service");
+const { fetchTransactions } = require("../services/transaction.service");
 
 async function listTransactions(req, res) {
   try {

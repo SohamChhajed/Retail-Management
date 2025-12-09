@@ -1,105 +1,88 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { FullTableModal } from "./full-table-modal"
+import { TransactionsResponse } from "../services/api";
 
-export default function DataTable() {
-  const [isFullTableOpen, setIsFullTableOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
+interface DataTableProps {
+  data: TransactionsResponse | null;
+  loading: boolean;
+  error: string | null;
+  page: number;
+  onPageChange: (page: number) => void;
+}
 
-  // sample data in figma
-  const tableData = Array(12)
-    .fill(null)
-    .map((_, idx) => ({
-      id: idx + 1,
-      transactionId: "1234567",
-      date: "2023-09-26",
-      customerId: "CUST12016",
-      customerName: "Neha Yadav",
-      phoneNumber: "+91 9123456789",
-      gender: "Female",
-      age: 25,
-      productCategory: "Clothing",
-      quantity: "01",
-    }))
+export default function DataTable({
+  data,
+  loading,
+  error,
+  page,
+  onPageChange,
+}: DataTableProps) {
+  if (loading) return <div className="px-6 py-4">Loading...</div>;
+  if (error) return <div className="px-6 py-4 text-red-600">{error}</div>;
+  if (!data || data.items.length === 0)
+    return <div className="px-6 py-4">No records found.</div>;
 
-  const columns = [
-    "Transaction ID",
-    "Date",
-    "Customer ID",
-    "Customer name",
-    "Phone Number",
-    "Gender",
-    "Age",
-    "Product Category",
-    "Quantity",
-  ]
+  const rows = data.items;
+  const totalPages = data.totalPages;
+
+  const pages: number[] = [];
+  if (totalPages > 0) {
+    let start = Math.max(1, page - 2);
+    let end = Math.min(totalPages, start + 4);
+    start = Math.max(1, end - 4);
+    for (let p = start; p <= end; p++) {
+      pages.push(p);
+    }
+  }
 
   return (
-    <>
-      <div className="px-6 py-4">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Transaction Details</h3>
-          <button
-            onClick={() => setIsFullTableOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            title="View full table"
-          >
-            <span className="text-xl">&lt;/&gt;</span>
-            <span className="text-sm font-medium">Full table view</span>
-          </button>
-        </div>
+    <div className="px-6 pb-6">
+      <table className="w-full text-sm border-collapse bg-white shadow-sm rounded-lg overflow-hidden">
+        <thead>
+          <tr className="bg-gray-100 text-left">
+            <th className="px-3 py-2">Date</th>
+            <th className="px-3 py-2">Customer</th>
+            <th className="px-3 py-2">Region</th>
+            <th className="px-3 py-2">Product</th>
+            <th className="px-3 py-2">Category</th>
+            <th className="px-3 py-2 text-right">Qty</th>
+            <th className="px-3 py-2 text-right">Final Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id} className="border-t">
+              <td className="px-3 py-2">{row.date}</td>
+              <td className="px-3 py-2">{row.customer_name}</td>
+              <td className="px-3 py-2">{row.customer_region}</td>
+              <td className="px-3 py-2">{row.product_name}</td>
+              <td className="px-3 py-2">{row.product_category}</td>
+              <td className="px-3 py-2 text-right">{row.quantity}</td>
+              <td className="px-3 py-2 text-right">
+                ₹{row.final_amount.toLocaleString("en-IN")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                {columns.map((column) => (
-                  <th key={column} className="text-left text-sm font-semibold text-gray-700 pb-3 px-2">
-                    {column}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {tableData.map((row, idx) => (
-                <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.transactionId}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.date}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.customerId}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.customerName}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.phoneNumber}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.gender}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.age}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.productCategory}</td>
-                  <td className="text-sm text-gray-600 py-3 px-2">{row.quantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-center gap-2 mt-6">
-          <button className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            Prev
-          </button>
-          {[1, 2, 3, 4, 5].map((page) => (
+      <div className="mt-4 flex justify-center">
+        <div className="flex gap-1">
+          {pages.map((p) => (
             <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-2 text-sm rounded-lg transition-colors ${
-                page === currentPage ? "bg-black text-white font-semibold" : "text-gray-600 hover:bg-gray-100"
+              key={p}
+              onClick={() => onPageChange(p)}
+              className={`px-3 py-1 border rounded text-sm ${
+                p === page
+                  ? "bg-gray-900 text-white border-gray-900"
+                  : "bg-white text-gray-700 hover:bg-gray-100"
               }`}
             >
-              {page}
+              {p}
             </button>
           ))}
-          <button className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-            Next
-          </button>
         </div>
       </div>
-      <FullTableModal isOpen={isFullTableOpen} onClose={() => setIsFullTableOpen(false)} />
-    </>
-  )
+    </div>
+  );
 }
